@@ -10,6 +10,7 @@ import (
 
 type Config struct {
 	Env          string        `yaml:"env" env:"ENV" env-default:"local"`
+	DSN          string        `yaml:"dsn" env:"DSN" env-required:"true"`
 	Addr         string        `yaml:"address" env:"ADDR" env-default:":8080"`
 	ReadTimeout  time.Duration `yaml:"read_timeout" env:"RT" env-default:"5s"`
 	WriteTimeout time.Duration `yaml:"write_timeout" env:"WT" env-default:"5s"`
