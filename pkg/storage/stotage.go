@@ -15,6 +15,7 @@ var (
 
 type Storage interface {
 	CreateSubscription(ctx context.Context, sub *model.Subscription) error
+	ReadSubscription(ctx context.Context, subID int64) (*model.Subscription, error)
 	CloseConnection()
 	CheckStorage
 }
@@ -44,5 +45,10 @@ const (
 				)
 				AND CURRENT_DATE >= start_date
 		);
+	`
+	ReadSubscriptionSchema = `
+		SELECT service_name, price, user_id, start_date, end_date
+		FROM subscriptions
+		WHERE id = $1;
 	`
 )

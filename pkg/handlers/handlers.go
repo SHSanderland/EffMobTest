@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/SHSanderland/EffMobTest/pkg/handlers/csub"
+	"github.com/SHSanderland/EffMobTest/pkg/handlers/rsub"
 	"github.com/SHSanderland/EffMobTest/pkg/service"
 	"github.com/SHSanderland/EffMobTest/pkg/storage"
 )
@@ -23,4 +24,8 @@ func InitHandlers(log *slog.Logger, db storage.Storage) SubscriptionHandlers {
 
 func (sh *SubscriptionHandlers) CreateSubscription(w http.ResponseWriter, r *http.Request) {
 	csub.Handler(sh.log, sh.database, sh.service, w, r)
+}
+
+func (sh *SubscriptionHandlers) ReadSubscription(w http.ResponseWriter, r *http.Request) {
+	rsub.Handler(sh.log, sh.database, w, r)
 }
