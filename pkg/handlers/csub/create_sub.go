@@ -1,6 +1,7 @@
 package csub
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 
@@ -9,12 +10,12 @@ import (
 )
 
 type createSubscription interface {
-	CreateSubscription(sub *model.Subscription) error
+	CreateSubscription(ctx context.Context, sub *model.Subscription) error
 }
 
 type checker interface {
 	CheckBody(sub *model.Subscription) bool
-	CheckSubActive(sub *model.Subscription) bool
+	CheckSubscription(ctx context.Context, sub *model.Subscription) (bool, error)
 }
 
 func Handler(
@@ -45,14 +46,22 @@ func Handler(
 		return
 	}
 
-	if !c.CheckSubActive(sub) {
+	isActive, err := c.CheckSubscription(r.Context(), sub)
+	if err != nil {
+		log.Error("failed to check subscription", slog.String("err", err.Error()))
+		http.Error(w, "something wrong", http.StatusInternalServerError)
+
+		return
+	}
+
+	if isActive {
 		log.Error("subscription already active")
 		http.Error(w, "subscription already active", http.StatusConflict)
 
 		return
 	}
 
-	err = cs.CreateSubscription(sub)
+	err = cs.CreateSubscription(r.Context(), sub)
 	if err != nil {
 		log.Error("failed to create subscription", slog.String("err", err.Error()))
 		http.Error(w, "something wrong", http.StatusInternalServerError)

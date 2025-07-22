@@ -17,7 +17,11 @@ func main() {
 
 	cfg := config.InitConfig(*configPath)
 	log := logger.InitLogger(cfg.Env)
-	db, _ := psql.InitDB(context.TODO(), log, cfg)
+	db, err := psql.InitDB(context.TODO(), log, cfg)
+
+	if err != nil {
+		panic(err)
+	}
 
 	server.InitServer(log, cfg, db)
 }

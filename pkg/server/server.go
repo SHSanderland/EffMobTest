@@ -9,6 +9,7 @@ import (
 	"github.com/SHSanderland/EffMobTest/pkg/handlers"
 	"github.com/SHSanderland/EffMobTest/pkg/storage"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 func InitServer(l *slog.Logger, cfg *config.Config, db storage.Storage) {
@@ -38,6 +39,12 @@ func InitServer(l *slog.Logger, cfg *config.Config, db storage.Storage) {
 func initMux(log *slog.Logger, db storage.Storage) *chi.Mux {
 	router := chi.NewRouter()
 	h := handlers.InitHandlers(log, db)
+
+	router.Use(
+		middleware.Recoverer,
+		middleware.RequestID,
+		middleware.Logger,
+	)
 
 	router.Route("/api/v1", func(r chi.Router) {
 		r.Post("/subscriptions", h.CreateSubscription)
