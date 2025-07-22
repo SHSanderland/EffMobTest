@@ -19,7 +19,7 @@ func InitService(db storage.Storage) *Service {
 }
 
 func (s *Service) CheckBody(sub *model.Subscription) bool {
-	return true
+	return model.IsValidSubscription(sub)
 }
 
 func (s *Service) CheckSubActive(sub *model.Subscription) bool {

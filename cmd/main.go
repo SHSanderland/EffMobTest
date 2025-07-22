@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 
 	"github.com/SHSanderland/EffMobTest/pkg/config"
@@ -16,7 +17,7 @@ func main() {
 
 	cfg := config.InitConfig(*configPath)
 	log := logger.InitLogger(cfg.Env)
-	db := psql.InitDB(log, cfg.DSN)
+	db, _ := psql.InitDB(context.TODO(), log, cfg)
 
 	server.InitServer(log, cfg, db)
 }

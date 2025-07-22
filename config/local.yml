@@ -1,6 +1,11 @@
 env: "local"
-dsn: "postgresql://postgres:postgresql@postgres-server:5432/postgres"
-address: ":8080"
-read_timeout: 5s
-write_timeout: 5s
-idle_timeout: 10s
+
+server:
+  address: ":8080"
+  read_timeout: 5s
+  write_timeout: 5s
+  idle_timeout: 10s
+
+database:
+  dsn: "postgresql://postgres:postgres@localhost:5432/emtest?sslmode=disable"
+  sourceURL: "file:///home/pain/EMTest/migrations"

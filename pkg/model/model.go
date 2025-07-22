@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -24,4 +25,34 @@ func GetSubFromBody(r *http.Request) (*Subscription, error) {
 	}
 
 	return &sub, nil
+}
+
+func IsValidSubscription(sub *Subscription) bool {
+	if sub.ServiceName == "" || sub.Price <= 0 {
+		return false
+	}
+
+	if uuid.Validate(sub.UserID.String()) != nil {
+		return false
+	}
+
+	if sub.EndDate != "" {
+		layout := "01-2006"
+
+		startDate, err := time.Parse(layout, sub.StartDate)
+		if err != nil {
+			return false
+		}
+
+		endDate, err := time.Parse(layout, sub.EndDate)
+		if err != nil {
+			return false
+		}
+
+		if !endDate.After(startDate) {
+			return false
+		}
+	}
+
+	return true
 }
