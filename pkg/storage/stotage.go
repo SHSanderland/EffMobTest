@@ -18,6 +18,7 @@ type Storage interface {
 	CreateSubscription(ctx context.Context, sub *model.Subscription) error
 	ReadSubscription(ctx context.Context, subID int64) (*model.Subscription, error)
 	UpdateSubscription(ctx context.Context, subID int64, sub *model.Subscription) error
+	DeleteSubscription(ctx context.Context, subID int64) error
 	CloseConnection()
 	CheckStorage
 }
@@ -66,5 +67,9 @@ const (
 			FROM subscriptions
 			WHERE id = $1
 		);	
+	`
+	DeleteSubscriptionSchema = `
+		DELETE FROM subscriptions
+		WHERE id = $1	
 	`
 )

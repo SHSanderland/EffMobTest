@@ -235,6 +235,43 @@ func (s *Storage) UpdateSubscription(ctx context.Context, subID int64, sub *mode
 	return nil
 }
 
+func (s *Storage) DeleteSubscription(ctx context.Context, subID int64) error {
+	const fn = "psql.DeleteSubscription"
+	log := s.log.With(
+		slog.String("fn", fn),
+		slog.Int64("subID", subID),
+	)
+
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		log.Error("failed to begin transaction", slog.String("err", err.Error()))
+
+		return fmt.Errorf("%w: %w", storage.ErrBeginTrans, err)
+	}
+
+	defer func() {
+		err := tx.Rollback(ctx)
+		if err != nil && !errors.Is(err, pgx.ErrTxClosed) {
+			log.Error("failed to rollback transaction", slog.String("err", err.Error()))
+		}
+	}()
+
+	_, err = tx.Exec(ctx, storage.DeleteSubscriptionSchema, subID)
+	if err != nil {
+		log.Error("failed to exec schema", slog.String("err", err.Error()))
+
+		return fmt.Errorf("%w: %w", storage.ErrExecSchema, err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		log.Error("failed to commit transaction", slog.String("err", err.Error()))
+
+		return fmt.Errorf("%w: %w", storage.ErrCommitTrans, err)
+	}
+
+	return nil
+}
+
 func (s *Storage) CloseConnection() {
 	s.db.Close()
 	s.log.Info("Connection to DB is closed!")

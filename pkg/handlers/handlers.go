@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/SHSanderland/EffMobTest/pkg/handlers/csub"
+	"github.com/SHSanderland/EffMobTest/pkg/handlers/dsub"
 	"github.com/SHSanderland/EffMobTest/pkg/handlers/rsub"
 	"github.com/SHSanderland/EffMobTest/pkg/handlers/usub"
 	"github.com/SHSanderland/EffMobTest/pkg/service"
@@ -33,4 +34,8 @@ func (sh *SubscriptionHandlers) ReadSubscription(w http.ResponseWriter, r *http.
 
 func (sh *SubscriptionHandlers) UpdateSubscription(w http.ResponseWriter, r *http.Request) {
 	usub.Handler(sh.log, sh.database, sh.service, w, r)
+}
+
+func (sh *SubscriptionHandlers) DeleteSubscription(w http.ResponseWriter, r *http.Request) {
+	dsub.Handler(sh.log, sh.database, w, r)
 }
