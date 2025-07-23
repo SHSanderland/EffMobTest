@@ -49,6 +49,7 @@ func initMux(log *slog.Logger, db storage.Storage) *chi.Mux {
 	router.Route("/api/v1", func(r chi.Router) {
 		r.Post("/subscriptions", h.CreateSubscription)
 		r.Get("/subscriptions/{id}", h.ReadSubscription)
+		r.Put("/subscriptions/{id}", h.UpdateSubscription)
 	})
 
 	return router

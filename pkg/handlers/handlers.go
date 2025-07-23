@@ -6,6 +6,7 @@ import (
 
 	"github.com/SHSanderland/EffMobTest/pkg/handlers/csub"
 	"github.com/SHSanderland/EffMobTest/pkg/handlers/rsub"
+	"github.com/SHSanderland/EffMobTest/pkg/handlers/usub"
 	"github.com/SHSanderland/EffMobTest/pkg/service"
 	"github.com/SHSanderland/EffMobTest/pkg/storage"
 )
@@ -28,4 +29,8 @@ func (sh *SubscriptionHandlers) CreateSubscription(w http.ResponseWriter, r *htt
 
 func (sh *SubscriptionHandlers) ReadSubscription(w http.ResponseWriter, r *http.Request) {
 	rsub.Handler(sh.log, sh.database, w, r)
+}
+
+func (sh *SubscriptionHandlers) UpdateSubscription(w http.ResponseWriter, r *http.Request) {
+	usub.Handler(sh.log, sh.database, sh.service, w, r)
 }

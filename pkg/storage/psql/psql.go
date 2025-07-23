@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -125,52 +126,6 @@ func (s *Storage) CreateSubscription(ctx context.Context, sub *model.Subscriptio
 	return nil
 }
 
-func (s *Storage) CheckSubscription(ctx context.Context, sub *model.Subscription) (bool, error) {
-	const fn = "psql.CheckSubscription"
-	log := s.log.With(
-		slog.String("fn", fn),
-		slog.String("userID", sub.UserID.String()),
-	)
-
-	var isActive bool
-
-	tx, err := s.db.Begin(ctx)
-	if err != nil {
-		log.Error("failed to begin transaction", slog.String("err", err.Error()))
-
-		return isActive, fmt.Errorf("%w: %w", storage.ErrBeginTrans, err)
-	}
-
-	defer func() {
-		err := tx.Rollback(ctx)
-		if err != nil && !errors.Is(err, pgx.ErrTxClosed) {
-			log.Error("failed to rollback transaction", slog.String("err", err.Error()))
-		}
-	}()
-
-	err = tx.QueryRow(
-		ctx,
-		storage.SubscriptionActiveSchema,
-		sub.UserID,
-		sub.ServiceName,
-	).Scan(&isActive)
-	if err != nil {
-		log.Error("failed to exec schema", slog.String("err", err.Error()))
-
-		return isActive, fmt.Errorf("%w: %w", storage.ErrExecSchema, err)
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		log.Error("failed to commit transaction", slog.String("err", err.Error()))
-
-		return isActive, fmt.Errorf("%w: %w", storage.ErrCommitTrans, err)
-	}
-
-	log.Info("Subscription is checked!")
-
-	return isActive, nil
-}
-
 func (s *Storage) ReadSubscription(ctx context.Context, subID int64) (*model.Subscription, error) {
 	const fn = "psql.ReadSubscription"
 	log := s.log.With(
@@ -217,8 +172,6 @@ func (s *Storage) ReadSubscription(ctx context.Context, subID int64) (*model.Sub
 		return nil, fmt.Errorf("%w: %w", storage.ErrCommitTrans, err)
 	}
 
-	fmt.Println(startTime, endTime)
-
 	sub.StartDate = startTime.Format("01-2006")
 	if endTime != nil {
 		sub.EndDate = endTime.Format("01-2006")
@@ -229,7 +182,125 @@ func (s *Storage) ReadSubscription(ctx context.Context, subID int64) (*model.Sub
 	return &sub, nil
 }
 
+func (s *Storage) UpdateSubscription(ctx context.Context, subID int64, sub *model.Subscription) error {
+	const fn = "psql.UpdateSubscription"
+	log := s.log.With(
+		slog.String("fn", fn),
+		slog.Int64("subID", subID),
+	)
+
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		log.Error("failed to begin transaction", slog.String("err", err.Error()))
+
+		return fmt.Errorf("%w: %w", storage.ErrBeginTrans, err)
+	}
+
+	defer func() {
+		err := tx.Rollback(ctx)
+		if err != nil && !errors.Is(err, pgx.ErrTxClosed) {
+			log.Error("failed to rollback transaction", slog.String("err", err.Error()))
+		}
+	}()
+
+	updates, args := prepareUpdate(sub)
+
+	if len(updates) == 0 {
+		return storage.ErrEmptySub
+	}
+
+	query := fmt.Sprintf(
+		"UPDATE subscriptions SET %s WHERE id = $%d",
+		strings.Join(updates, ", "),
+		len(updates)+1,
+	)
+
+	args = append(args, subID)
+
+	_, err = tx.Exec(ctx, query, args...)
+	if err != nil {
+		log.Error("failed to exec schema", slog.String("err", err.Error()))
+
+		return fmt.Errorf("%w: %w", storage.ErrExecSchema, err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		log.Error("failed to commit transaction", slog.String("err", err.Error()))
+
+		return fmt.Errorf("%w: %w", storage.ErrCommitTrans, err)
+	}
+
+	log.Info("Subscription is update!")
+
+	return nil
+}
+
 func (s *Storage) CloseConnection() {
 	s.db.Close()
 	s.log.Info("Connection to DB is closed!")
+}
+
+func prepareUpdate(sub *model.Subscription) ([]string, []any) {
+	var (
+		updates []string
+		args    []any
+	)
+
+	if sub.ServiceName != "" {
+		updates = append(updates, fmt.Sprintf("service_name = $%d", len(updates)+1))
+		args = append(args, sub.ServiceName)
+	}
+
+	if sub.Price > 0 {
+		updates = append(updates, fmt.Sprintf("price = $%d", len(updates)+1))
+		args = append(args, sub.Price)
+	}
+
+	if sub.EndDate != "" {
+		updates = append(updates, fmt.Sprintf("end_date = TO_DATE($%d, 'MM-YYYY')", len(updates)+1))
+		args = append(args, sub.EndDate)
+	}
+
+	return updates, args
+}
+
+func (s *Storage) getSubscriptionStartDate(ctx context.Context, subID int64) *time.Time {
+	const fn = "psql.UpdateSubscription"
+	log := s.log.With(
+		slog.String("fn", fn),
+		slog.Int64("subID", subID),
+	)
+
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		log.Error("failed to begin transaction", slog.String("err", err.Error()))
+
+		return nil
+	}
+
+	defer func() {
+		err := tx.Rollback(ctx)
+		if err != nil && !errors.Is(err, pgx.ErrTxClosed) {
+			log.Error("failed to rollback transaction", slog.String("err", err.Error()))
+		}
+	}()
+
+	var startDateFromDB *time.Time
+
+	err = tx.QueryRow(ctx, storage.ReadSubscriptionStartDateSchema, subID).Scan(
+		&startDateFromDB,
+	)
+	if err != nil {
+		log.Error("failed to exec schema", slog.String("err", err.Error()))
+
+		return nil
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		log.Error("failed to commit transaction", slog.String("err", err.Error()))
+
+		return nil
+	}
+
+	return startDateFromDB
 }
