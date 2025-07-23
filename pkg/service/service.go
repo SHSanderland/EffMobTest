@@ -2,9 +2,21 @@ package service
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"net/http"
+	"strconv"
 
 	"github.com/SHSanderland/EffMobTest/pkg/model"
 	"github.com/SHSanderland/EffMobTest/pkg/storage"
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
+)
+
+var (
+	ErrInvalidSubID       = errors.New("invalid subscription ID")
+	ErrInvalidUserID      = errors.New("invalid user ID")
+	ErrInvalidServiceName = errors.New("invalid service name")
 )
 
 type SubscriptionService interface {
@@ -12,6 +24,8 @@ type SubscriptionService interface {
 	CheckSubscription(ctx context.Context, sub *model.Subscription) (bool, error)
 	CheckSubscriptionID(ctx context.Context, subID int64) (bool, error)
 	CheckSubscriptionForUpdate(ctx context.Context, subID int64, sub *model.Subscription) (bool, error)
+	GetSubID(r *http.Request) (int64, error)
+	GetUserIDAndServiceName(r *http.Request) (uuid.UUID, string, error)
 }
 
 type Service struct {
@@ -36,4 +50,34 @@ func (s *Service) CheckSubscriptionID(ctx context.Context, subID int64) (bool, e
 
 func (s *Service) CheckSubscriptionForUpdate(ctx context.Context, subID int64, sub *model.Subscription) (bool, error) {
 	return s.database.CheckSubscriptionForUpdate(ctx, subID, sub)
+}
+
+func (s *Service) GetSubID(r *http.Request) (int64, error) {
+	subID := chi.URLParam(r, "id")
+
+	intsubID, err := strconv.ParseInt(subID, 10, 64)
+	if err != nil || intsubID < 0 {
+		return intsubID, fmt.Errorf("%w: %w", ErrInvalidSubID, err)
+	}
+
+	return intsubID, nil
+}
+
+func (s *Service) GetUserIDAndServiceName(r *http.Request) (uuid.UUID, string, error) {
+	userID := r.URL.Query().Get("user_id")
+	if userID == "" {
+		return uuid.Nil, "", ErrInvalidUserID
+	}
+
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		return userUUID, "", fmt.Errorf("%w: %w", ErrInvalidUserID, err)
+	}
+
+	serviceName := r.URL.Query().Get("service_name")
+	if serviceName == "" {
+		return userUUID, serviceName, ErrInvalidServiceName
+	}
+
+	return userUUID, serviceName, nil
 }

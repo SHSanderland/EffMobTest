@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/SHSanderland/EffMobTest/pkg/model"
+	"github.com/google/uuid"
 )
 
 var (
@@ -19,6 +20,7 @@ type Storage interface {
 	ReadSubscription(ctx context.Context, subID int64) (*model.Subscription, error)
 	UpdateSubscription(ctx context.Context, subID int64, sub *model.Subscription) error
 	DeleteSubscription(ctx context.Context, subID int64) error
+	GetListSubscription(ctx context.Context, userID uuid.UUID, serviceName string) ([]*model.Subscription, error)
 	CloseConnection()
 	CheckStorage
 }
@@ -70,6 +72,11 @@ const (
 	`
 	DeleteSubscriptionSchema = `
 		DELETE FROM subscriptions
-		WHERE id = $1	
+		WHERE id = $1;
+	`
+	ListSubscriptionSchema = `
+		SELECT service_name, price, user_id, start_date, end_date
+		FROM subscriptions
+		WHERE user_id = $1 AND service_name = $2;
 	`
 )

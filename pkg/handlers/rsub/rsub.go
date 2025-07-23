@@ -5,10 +5,9 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
-	"strconv"
 
 	"github.com/SHSanderland/EffMobTest/pkg/model"
-	"github.com/go-chi/chi/v5"
+	"github.com/SHSanderland/EffMobTest/pkg/service"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
@@ -16,8 +15,12 @@ type readSubscription interface {
 	ReadSubscription(ctx context.Context, id int64) (*model.Subscription, error)
 }
 
+type urlParser interface {
+	GetSubID(r *http.Request) (int64, error)
+}
+
 func Handler(
-	l *slog.Logger, rs readSubscription,
+	l *slog.Logger, rs readSubscription, up urlParser,
 	w http.ResponseWriter, r *http.Request,
 ) {
 	const fn = "handlers.rsub.Handler"
@@ -26,16 +29,14 @@ func Handler(
 		slog.String("requestID", middleware.GetReqID(r.Context())),
 	)
 
-	subID := chi.URLParam(r, "id")
-
-	intsubID, err := strconv.ParseInt(subID, 10, 64)
-	if err != nil || intsubID < 0 {
+	intsubID, err := up.GetSubID(r)
+	if err != nil {
 		log.Error(
-			"invalid subscription ID",
+			service.ErrInvalidSubID.Error(),
 			slog.Int64("ID", intsubID),
 			slog.String("err", err.Error()),
 		)
-		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		http.Error(w, service.ErrInvalidSubID.Error(), http.StatusBadRequest)
 
 		return
 	}

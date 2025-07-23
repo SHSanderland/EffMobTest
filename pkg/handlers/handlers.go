@@ -6,6 +6,7 @@ import (
 
 	"github.com/SHSanderland/EffMobTest/pkg/handlers/csub"
 	"github.com/SHSanderland/EffMobTest/pkg/handlers/dsub"
+	"github.com/SHSanderland/EffMobTest/pkg/handlers/lsub"
 	"github.com/SHSanderland/EffMobTest/pkg/handlers/rsub"
 	"github.com/SHSanderland/EffMobTest/pkg/handlers/usub"
 	"github.com/SHSanderland/EffMobTest/pkg/service"
@@ -29,7 +30,7 @@ func (sh *SubscriptionHandlers) CreateSubscription(w http.ResponseWriter, r *htt
 }
 
 func (sh *SubscriptionHandlers) ReadSubscription(w http.ResponseWriter, r *http.Request) {
-	rsub.Handler(sh.log, sh.database, w, r)
+	rsub.Handler(sh.log, sh.database, sh.service, w, r)
 }
 
 func (sh *SubscriptionHandlers) UpdateSubscription(w http.ResponseWriter, r *http.Request) {
@@ -37,5 +38,13 @@ func (sh *SubscriptionHandlers) UpdateSubscription(w http.ResponseWriter, r *htt
 }
 
 func (sh *SubscriptionHandlers) DeleteSubscription(w http.ResponseWriter, r *http.Request) {
-	dsub.Handler(sh.log, sh.database, w, r)
+	dsub.Handler(sh.log, sh.database, sh.service, w, r)
+}
+
+func (sh *SubscriptionHandlers) ListSubscription(w http.ResponseWriter, r *http.Request) {
+	lsub.Handler(sh.log, sh.database, sh.service, w, r)
+}
+
+func (sh *SubscriptionHandlers) CostSubscription(w http.ResponseWriter, r *http.Request) {
+	// costsub.Handler(sh.log, )
 }

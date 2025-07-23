@@ -11,6 +11,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/google/uuid"
 
 	"github.com/SHSanderland/EffMobTest/pkg/config"
 	"github.com/SHSanderland/EffMobTest/pkg/model"
@@ -272,6 +273,53 @@ func (s *Storage) DeleteSubscription(ctx context.Context, subID int64) error {
 	return nil
 }
 
+func (s *Storage) GetListSubscription(
+	ctx context.Context, userID uuid.UUID, serviceName string,
+) ([]*model.Subscription, error) {
+	const fn = "psql.GetListSubscription"
+	log := s.log.With(
+		slog.String("fn", fn),
+		slog.String("userID", userID.String()),
+		slog.String("serviceName", serviceName),
+	)
+
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		log.Error("failed to begin transaction", slog.String("err", err.Error()))
+
+		return nil, fmt.Errorf("%w: %w", storage.ErrBeginTrans, err)
+	}
+
+	defer func() {
+		err := tx.Rollback(ctx)
+		if err != nil && !errors.Is(err, pgx.ErrTxClosed) {
+			log.Error("failed to rollback transaction", slog.String("err", err.Error()))
+		}
+	}()
+
+	rows, err := tx.Query(ctx, storage.ListSubscriptionSchema, userID, serviceName)
+	if err != nil {
+		log.Error("failed to exec schema", slog.String("err", err.Error()))
+
+		return nil, fmt.Errorf("%w: %w", storage.ErrExecSchema, err)
+	}
+
+	subs, err := s.getSubList(rows)
+	if err != nil {
+		log.Error("failed to scan rows", slog.String("err", err.Error()))
+
+		return nil, fmt.Errorf("%w: %w", storage.ErrExecSchema, err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		log.Error("failed to commit transaction", slog.String("err", err.Error()))
+
+		return nil, fmt.Errorf("%w: %w", storage.ErrCommitTrans, err)
+	}
+
+	return subs, nil
+}
+
 func (s *Storage) CloseConnection() {
 	s.db.Close()
 	s.log.Info("Connection to DB is closed!")
@@ -340,4 +388,40 @@ func (s *Storage) getSubscriptionStartDate(ctx context.Context, subID int64) *ti
 	}
 
 	return startDateFromDB
+}
+
+func (s *Storage) getSubList(rows pgx.Rows) ([]*model.Subscription, error) {
+	var subs []*model.Subscription
+
+	for rows.Next() {
+		var (
+			sub       model.Subscription
+			startDate time.Time
+			endDate   *time.Time
+		)
+
+		err := rows.Scan(
+			&sub.ServiceName,
+			&sub.Price,
+			&sub.UserID,
+			&startDate,
+			&endDate,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %w", storage.ErrExecSchema, err)
+		}
+
+		sub.StartDate = startDate.Format("01-2006")
+		if endDate != nil {
+			sub.EndDate = endDate.Format("01-2006")
+		}
+
+		subs = append(subs, &sub)
+	}
+
+	if rows.Err() != nil {
+		return nil, fmt.Errorf("%w: %w", storage.ErrExecSchema, rows.Err())
+	}
+
+	return subs, nil
 }

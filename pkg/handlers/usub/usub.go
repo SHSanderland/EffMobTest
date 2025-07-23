@@ -4,10 +4,9 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
-	"strconv"
 
 	"github.com/SHSanderland/EffMobTest/pkg/model"
-	"github.com/go-chi/chi/v5"
+	"github.com/SHSanderland/EffMobTest/pkg/service"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
@@ -15,13 +14,14 @@ type updateSubscription interface {
 	UpdateSubscription(ctx context.Context, id int64, sub *model.Subscription) error
 }
 
-type checker interface {
+type helper interface {
 	CheckSubscriptionID(ctx context.Context, subID int64) (bool, error)
 	CheckSubscriptionForUpdate(ctx context.Context, subID int64, sub *model.Subscription) (bool, error)
+	GetSubID(r *http.Request) (int64, error)
 }
 
 func Handler(
-	l *slog.Logger, us updateSubscription, c checker,
+	l *slog.Logger, us updateSubscription, h helper,
 	w http.ResponseWriter, r *http.Request,
 ) {
 	const fn = "handlers.rsub.Handler"
@@ -30,21 +30,19 @@ func Handler(
 		slog.String("requestID", middleware.GetReqID(r.Context())),
 	)
 
-	subID := chi.URLParam(r, "id")
-
-	intsubID, err := strconv.ParseInt(subID, 10, 64)
-	if err != nil || intsubID < 0 {
+	intsubID, err := h.GetSubID(r)
+	if err != nil {
 		log.Error(
-			"invalid subscription ID",
+			service.ErrInvalidSubID.Error(),
 			slog.Int64("ID", intsubID),
 			slog.String("err", err.Error()),
 		)
-		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		http.Error(w, service.ErrInvalidSubID.Error(), http.StatusBadRequest)
 
 		return
 	}
 
-	hasID, err := c.CheckSubscriptionID(r.Context(), intsubID)
+	hasID, err := h.CheckSubscriptionID(r.Context(), intsubID)
 	if err != nil {
 		log.Error("failed check subscription ID", slog.String("err", err.Error()))
 		http.Error(w, "Something wrong", http.StatusInternalServerError)
@@ -67,7 +65,7 @@ func Handler(
 		return
 	}
 
-	isValidUpdate, err := c.CheckSubscriptionForUpdate(r.Context(), intsubID, sub)
+	isValidUpdate, err := h.CheckSubscriptionForUpdate(r.Context(), intsubID, sub)
 	if err != nil {
 		log.Error("failed check subscription for update", slog.String("err", err.Error()))
 		http.Error(w, "Something wrong", http.StatusInternalServerError)
