@@ -1,9 +1,13 @@
 package server
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/SHSanderland/EffMobTest/pkg/config"
 	"github.com/SHSanderland/EffMobTest/pkg/handlers"
@@ -29,11 +33,17 @@ func InitServer(l *slog.Logger, cfg *config.Config, db storage.Storage) {
 
 	log.Info("Start server!")
 
+	go gracefulShutdown(log, &srv, db)
+
 	if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		log.Error("error to start server", slog.String("err", err.Error()))
 
 		panic(err)
 	}
+
+	log.Info("Closing database...")
+
+	db.CloseConnection()
 }
 
 func initMux(log *slog.Logger, db storage.Storage) *chi.Mux {
@@ -56,4 +66,16 @@ func initMux(log *slog.Logger, db storage.Storage) *chi.Mux {
 	})
 
 	return router
+}
+
+func gracefulShutdown(log *slog.Logger, srv *http.Server, db storage.Storage) {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
+	<-c
+
+	log.Info("Received shutdown signal, gracefully shutting down...")
+
+	if err := srv.Shutdown(context.TODO()); err != nil {
+		log.Warn("failed to shutdown server", slog.String("err", err.Error()))
+	}
 }
