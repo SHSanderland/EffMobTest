@@ -23,16 +23,16 @@ type helper interface {
 	CheckSubscriptionID(ctx context.Context, subID int64) (bool, error)
 }
 
-// @Summary Удалить подписку
-// @Description Удаляет подписку по указанному ID
-// @Tags subscriptions
-// @Produce plain
-// @Param id path int true "ID удаляемой подписки" Example(123)
-// @Success 204 "Подписка успешно удалена"
-// @Failure 400 {string} string "Невалидный ID подписки"
-// @Failure 404 {string} string "Подписка не найдена"
-// @Failure 500 {string} string "Внутренняя ошибка сервера"
-// @Router /subscriptions/{id} [delete]
+// @Summary		Удалить подписку
+// @Description	Удаляет подписку по указанному ID
+// @Tags			subscriptions
+// @Produce		plain
+// @Param			id	path	int	true	"ID удаляемой подписки"	Example(123)
+// @Success		204	"Подписка успешно удалена"
+// @Failure		400	{string}	string	"Невалидный ID подписки"
+// @Failure		404	{string}	string	"Подписка не найдена"
+// @Failure		500	{string}	string	"Внутренняя ошибка сервера"
+// @Router			/subscriptions/{id} [delete]
 func Handler(
 	l *slog.Logger, ds deleteSubscription, h helper,
 	w http.ResponseWriter, r *http.Request,

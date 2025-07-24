@@ -30,16 +30,16 @@ type userResponse struct {
 	Total         int                   `json:"total"`
 }
 
-// @Summary Получить список подписок
-// @Description Возвращает список подписок с возможностью фильтрации по user_id и service_name
-// @Tags subscriptions
-// @Produce json
-// @Param user_id query string true "UUID пользователя для фильтрации" Example(550e8400-e29b-41d4-a716-446655440000)
-// @Param service_name query string true "Название сервиса для фильтрации" Example(netflix)
-// @Success 200 {object} userResponse "Успешный запрос"
-// @Failure 400 {string} string "Невалидные параметры запроса"
-// @Failure 500 {string} string "Внутренняя ошибка сервера"
-// @Router /subscriptions [get]
+// @Summary		Получить список подписок
+// @Description	Возвращает список подписок с возможностью фильтрации по user_id и service_name
+// @Tags			subscriptions
+// @Produce		json
+// @Param			user_id			query		string			true	"UUID пользователя для фильтрации"	Example(550e8400-e29b-41d4-a716-446655440000)
+// @Param			service_name	query		string			true	"Название сервиса для фильтрации"	Example(netflix)
+// @Success		200				{object}	userResponse	"Успешный запрос"
+// @Failure		400				{string}	string			"Невалидные параметры запроса"
+// @Failure		500				{string}	string			"Внутренняя ошибка сервера"
+// @Router			/subscriptions [get]
 func Handler(
 	l *slog.Logger, ls listSubscription, up urlParser,
 	w http.ResponseWriter, r *http.Request,

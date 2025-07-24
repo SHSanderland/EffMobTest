@@ -30,9 +30,9 @@ type checker interface {
 // @Produce		plain
 // @Param			input	body	model.Subscription	true	"Данные для создания подписки"
 // @Success		201		"Подписка успешно создана"
-// @Failure		400		{string} string "Невалидные входные данные"
-// @Failure		409		{string} string "Подписка уже активна"
-// @Failure		500		{string} string "Внутренняя ошибка сервера"
+// @Failure		400		{string}	string	"Невалидные входные данные"
+// @Failure		409		{string}	string	"Подписка уже активна"
+// @Failure		500		{string}	string	"Внутренняя ошибка сервера"
 // @Router			/subscriptions [post]
 func Handler(
 	l *slog.Logger, cs createSubscription,

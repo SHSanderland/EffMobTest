@@ -37,7 +37,7 @@ func InitServer(l *slog.Logger, cfg *config.Config, db storage.Storage) {
 		IdleTimeout:  cfg.IdleTimeout,
 	}
 
-	log.Info("Start serve../r!")
+	log.Info("Start server!")
 
 	go gracefulShutdown(log, &srv)
 

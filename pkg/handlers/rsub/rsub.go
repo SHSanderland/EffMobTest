@@ -25,16 +25,16 @@ type helper interface {
 	CheckSubscriptionID(ctx context.Context, subID int64) (bool, error)
 }
 
-// @Summary Получить подписку по ID
-// @Description Возвращает информацию о подписке по её идентификатору
-// @Tags subscriptions
-// @Produce json
-// @Param id path int true "ID подписки" Example(123)
-// @Success 200 {object} model.Subscription "Успешный запрос"
-// @Failure 400 {string} string "Невалидный ID подписки"
-// @Failure 404 {string} string "Подписка не найдена"
-// @Failure 500 {string} string "Внутренняя ошибка сервера"
-// @Router /subscriptions/{id} [get]
+// @Summary		Получить подписку по ID
+// @Description	Возвращает информацию о подписке по её идентификатору
+// @Tags			subscriptions
+// @Produce		json
+// @Param			id	path		int					true	"ID подписки"	Example(123)
+// @Success		200	{object}	model.Subscription	"Успешный запрос"
+// @Failure		400	{string}	string				"Невалидный ID подписки"
+// @Failure		404	{string}	string				"Подписка не найдена"
+// @Failure		500	{string}	string				"Внутренняя ошибка сервера"
+// @Router			/subscriptions/{id} [get]
 func Handler(
 	l *slog.Logger, rs readSubscription, h helper,
 	w http.ResponseWriter, r *http.Request,

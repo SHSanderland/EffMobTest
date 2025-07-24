@@ -32,18 +32,18 @@ type userResponse struct {
 	TotalCost   int64      `json:"total_cost"`
 }
 
-// @Summary Рассчитать стоимость подписок
-// @Description Возвращает суммарную стоимость подписок за указанный период с возможностью фильтрации
-// @Tags subscriptions
-// @Produce json
-// @Param user_id query string true "UUID пользователя" Example(550e8400-e29b-41d4-a716-446655440000)
-// @Param service_name query string true "Название сервиса" Example(netflix)
-// @Param start_date query string true "Начало периода (формат MM-YYYY)" Example(01-2023)
-// @Param end_date query string true "Конец периода (формат MM-YYYY)" Example(12-2023)
-// @Success 200 {object} userResponse "Успешный расчет стоимости"
-// @Failure 400 {string} string "Невалидные параметры запроса"
-// @Failure 500 {string} string "Внутренняя ошибка сервера"
-// @Router /subscriptions/cost [get]
+// @Summary		Рассчитать стоимость подписок
+// @Description	Возвращает суммарную стоимость подписок за указанный период с возможностью фильтрации
+// @Tags			subscriptions
+// @Produce		json
+// @Param			user_id			query		string			true	"UUID пользователя"					Example(550e8400-e29b-41d4-a716-446655440000)
+// @Param			service_name	query		string			true	"Название сервиса"					Example(netflix)
+// @Param			start_date		query		string			true	"Начало периода (формат MM-YYYY)"	Example(01-2023)
+// @Param			end_date		query		string			true	"Конец периода (формат MM-YYYY)"	Example(12-2023)
+// @Success		200				{object}	userResponse	"Успешный расчет стоимости"
+// @Failure		400				{string}	string			"Невалидные параметры запроса"
+// @Failure		500				{string}	string			"Внутренняя ошибка сервера"
+// @Router			/subscriptions/cost [get]
 func Handler(
 	l *slog.Logger, cs costSubscription, h helper,
 	w http.ResponseWriter, r *http.Request,

@@ -25,18 +25,18 @@ type helper interface {
 	GetSubID(r *http.Request) (int64, error)
 }
 
-// @Summary Обновить подписку
-// @Description Обновляет информацию о существующей подписке по её ID
-// @Tags subscriptions
-// @Accept json
-// @Produce plain
-// @Param id path int true "ID обновляемой подписки" Example(123)
-// @Param input body model.Subscription true "Новые данные подписки"
-// @Success 200 "Подписка успешно обновлена"
-// @Failure 400 {string} string "Невалидные входные данные (ID или тело запроса)"
-// @Failure 404 {string} string "Подписка с указанным ID не найдена"
-// @Failure 500 {string} string "Внутренняя ошибка сервера"
-// @Router /subscriptions/{id} [put]
+// @Summary		Обновить подписку
+// @Description	Обновляет информацию о существующей подписке по её ID
+// @Tags			subscriptions
+// @Accept			json
+// @Produce		plain
+// @Param			id		path	int					true	"ID обновляемой подписки"	Example(123)
+// @Param			input	body	model.Subscription	true	"Новые данные подписки"
+// @Success		200		"Подписка успешно обновлена"
+// @Failure		400		{string}	string	"Невалидные входные данные (ID или тело запроса)"
+// @Failure		404		{string}	string	"Подписка с указанным ID не найдена"
+// @Failure		500		{string}	string	"Внутренняя ошибка сервера"
+// @Router			/subscriptions/{id} [put]
 func Handler(
 	l *slog.Logger, us updateSubscription, h helper,
 	w http.ResponseWriter, r *http.Request,
