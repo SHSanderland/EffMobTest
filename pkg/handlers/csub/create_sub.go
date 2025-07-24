@@ -1,3 +1,4 @@
+// Пакет csub для хендлера CreateSubscription.
 package csub
 
 import (
@@ -9,15 +10,30 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
+// createSubscription Интерефейс с методами к базе данных,
+// который использует хендлер.
 type createSubscription interface {
 	CreateSubscription(ctx context.Context, sub *model.Subscription) error
 }
 
+// checker Интерефейс с методами к Service,
+// который использует хендлер.
 type checker interface {
 	CheckBody(sub *model.Subscription) bool
 	CheckSubscription(ctx context.Context, sub *model.Subscription) (bool, error)
 }
 
+// @Summary		Создать новую подписку
+// @Description	Создает новую подписку после проверки валидности данных и отсутствия активной подписки
+// @Tags			subscriptions
+// @Accept			json
+// @Produce		plain
+// @Param			input	body	model.Subscription	true	"Данные для создания подписки"
+// @Success		201		"Подписка успешно создана"
+// @Failure		400		{string} string "Невалидные входные данные"
+// @Failure		409		{string} string "Подписка уже активна"
+// @Failure		500		{string} string "Внутренняя ошибка сервера"
+// @Router			/subscriptions [post]
 func Handler(
 	l *slog.Logger, cs createSubscription,
 	c checker, w http.ResponseWriter,

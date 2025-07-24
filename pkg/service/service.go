@@ -72,8 +72,12 @@ func (s *Service) GetSubID(r *http.Request) (int64, error) {
 	subID := chi.URLParam(r, "id")
 
 	intsubID, err := strconv.ParseInt(subID, 10, 64)
-	if err != nil || intsubID < 0 {
+	if err != nil {
 		return intsubID, fmt.Errorf("%w: %w", ErrInvalidSubID, err)
+	}
+
+	if intsubID < 0 {
+		return intsubID, ErrInvalidSubID
 	}
 
 	return intsubID, nil

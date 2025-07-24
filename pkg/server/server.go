@@ -16,6 +16,9 @@ import (
 	"github.com/SHSanderland/EffMobTest/pkg/storage"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+
+	_ "github.com/SHSanderland/EffMobTest/docs"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
 // InitServer Инициализация сервера.
@@ -34,7 +37,7 @@ func InitServer(l *slog.Logger, cfg *config.Config, db storage.Storage) {
 		IdleTimeout:  cfg.IdleTimeout,
 	}
 
-	log.Info("Start server!")
+	log.Info("Start serve../r!")
 
 	go gracefulShutdown(log, &srv)
 
@@ -68,6 +71,10 @@ func initMux(log *slog.Logger, db storage.Storage) *chi.Mux {
 		r.Get("/subscriptions", h.ListSubscription)
 		r.Get("/subscriptions/cost", h.CostSubscription)
 	})
+
+	router.Get("/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("http://localhost:8080/swagger/doc.json"),
+	))
 
 	return router
 }

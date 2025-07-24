@@ -1,0 +1,255 @@
+basePath: /api/v1
+definitions:
+  costsub.userResponse:
+    properties:
+      end_period:
+        type: string
+      service_name:
+        type: string
+      start_period:
+        type: string
+      total_cost:
+        type: integer
+    type: object
+  lsub.userResponse:
+    properties:
+      subscriptions:
+        items:
+          $ref: '#/definitions/model.Subscription'
+        type: array
+      total:
+        type: integer
+    type: object
+  model.Subscription:
+    properties:
+      end_date:
+        type: string
+      price:
+        type: integer
+      service_name:
+        type: string
+      start_date:
+        type: string
+      user_id:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API для управления подписками
+  title: Subscription API
+  version: "1.0"
+paths:
+  /subscriptions:
+    get:
+      description: Возвращает список подписок с возможностью фильтрации по user_id
+        и service_name
+      parameters:
+      - description: UUID пользователя для фильтрации
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: query
+        name: user_id
+        required: true
+        type: string
+      - description: Название сервиса для фильтрации
+        example: netflix
+        in: query
+        name: service_name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешный запрос
+          schema:
+            $ref: '#/definitions/lsub.userResponse'
+        "400":
+          description: Невалидные параметры запроса
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Получить список подписок
+      tags:
+      - subscriptions
+    post:
+      consumes:
+      - application/json
+      description: Создает новую подписку после проверки валидности данных и отсутствия
+        активной подписки
+      parameters:
+      - description: Данные для создания подписки
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/model.Subscription'
+      produces:
+      - text/plain
+      responses:
+        "201":
+          description: Подписка успешно создана
+        "400":
+          description: Невалидные входные данные
+          schema:
+            type: string
+        "409":
+          description: Подписка уже активна
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Создать новую подписку
+      tags:
+      - subscriptions
+  /subscriptions/{id}:
+    delete:
+      description: Удаляет подписку по указанному ID
+      parameters:
+      - description: ID удаляемой подписки
+        example: 123
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - text/plain
+      responses:
+        "204":
+          description: Подписка успешно удалена
+        "400":
+          description: Невалидный ID подписки
+          schema:
+            type: string
+        "404":
+          description: Подписка не найдена
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Удалить подписку
+      tags:
+      - subscriptions
+    get:
+      description: Возвращает информацию о подписке по её идентификатору
+      parameters:
+      - description: ID подписки
+        example: 123
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешный запрос
+          schema:
+            $ref: '#/definitions/model.Subscription'
+        "400":
+          description: Невалидный ID подписки
+          schema:
+            type: string
+        "404":
+          description: Подписка не найдена
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Получить подписку по ID
+      tags:
+      - subscriptions
+    put:
+      consumes:
+      - application/json
+      description: Обновляет информацию о существующей подписке по её ID
+      parameters:
+      - description: ID обновляемой подписки
+        example: 123
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Новые данные подписки
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/model.Subscription'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Подписка успешно обновлена
+        "400":
+          description: Невалидные входные данные (ID или тело запроса)
+          schema:
+            type: string
+        "404":
+          description: Подписка с указанным ID не найдена
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Обновить подписку
+      tags:
+      - subscriptions
+  /subscriptions/cost:
+    get:
+      description: Возвращает суммарную стоимость подписок за указанный период с возможностью
+        фильтрации
+      parameters:
+      - description: UUID пользователя
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: query
+        name: user_id
+        required: true
+        type: string
+      - description: Название сервиса
+        example: netflix
+        in: query
+        name: service_name
+        required: true
+        type: string
+      - description: Начало периода (формат MM-YYYY)
+        example: 01-2023
+        in: query
+        name: start_date
+        required: true
+        type: string
+      - description: Конец периода (формат MM-YYYY)
+        example: 12-2023
+        in: query
+        name: end_date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешный расчет стоимости
+          schema:
+            $ref: '#/definitions/costsub.userResponse'
+        "400":
+          description: Невалидные параметры запроса
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Рассчитать стоимость подписок
+      tags:
+      - subscriptions
+swagger: "2.0"
