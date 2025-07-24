@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/SHSanderland/EffMobTest/pkg/handlers/costsub"
 	"github.com/SHSanderland/EffMobTest/pkg/handlers/csub"
 	"github.com/SHSanderland/EffMobTest/pkg/handlers/dsub"
 	"github.com/SHSanderland/EffMobTest/pkg/handlers/lsub"
@@ -46,5 +47,5 @@ func (sh *SubscriptionHandlers) ListSubscription(w http.ResponseWriter, r *http.
 }
 
 func (sh *SubscriptionHandlers) CostSubscription(w http.ResponseWriter, r *http.Request) {
-	// costsub.Handler(sh.log, )
+	costsub.Handler(sh.log, sh.database, sh.service, w, r)
 }

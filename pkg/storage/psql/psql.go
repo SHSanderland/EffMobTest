@@ -320,6 +320,52 @@ func (s *Storage) GetListSubscription(
 	return subs, nil
 }
 
+func (s *Storage) CostSubscription(ctx context.Context, filter *model.CostParams) (int64, error) {
+	const fn = "psql.CostSubscription"
+	log := s.log.With(
+		slog.String("fn", fn),
+		slog.String("userID", filter.UserID.String()),
+		slog.String("serviceName", filter.ServiceName),
+	)
+
+	var total int64
+
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		log.Error("failed to begin transaction", slog.String("err", err.Error()))
+
+		return total, fmt.Errorf("%w: %w", storage.ErrBeginTrans, err)
+	}
+
+	defer func() {
+		err := tx.Rollback(ctx)
+		if err != nil && !errors.Is(err, pgx.ErrTxClosed) {
+			log.Error("failed to rollback transaction", slog.String("err", err.Error()))
+		}
+	}()
+
+	err = tx.QueryRow(
+		ctx, storage.CountSubscriptionsSchema,
+		filter.UserID,
+		filter.ServiceName,
+		filter.StartDate,
+		filter.EndDate,
+	).Scan(&total)
+	if err != nil {
+		log.Error("failed to scan rows", slog.String("err", err.Error()))
+
+		return total, fmt.Errorf("%w: %w", storage.ErrExecSchema, err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		log.Error("failed to commit transaction", slog.String("err", err.Error()))
+
+		return total, fmt.Errorf("%w: %w", storage.ErrCommitTrans, err)
+	}
+
+	return total, nil
+}
+
 func (s *Storage) CloseConnection() {
 	s.db.Close()
 	s.log.Info("Connection to DB is closed!")

@@ -56,3 +56,10 @@ func IsValidSubscription(sub *Subscription) bool {
 
 	return true
 }
+
+type CostParams struct {
+	ServiceName string     `json:"service_name"`
+	UserID      uuid.UUID  `json:"user_id"`
+	StartDate   time.Time  `json:"start_date"`
+	EndDate     *time.Time `json:"end_date"`
+}

@@ -1,60 +1,76 @@
 package costsub
 
 import (
+	"context"
+	"encoding/json"
 	"log/slog"
 	"net/http"
+	"time"
+
+	"github.com/SHSanderland/EffMobTest/pkg/model"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
-type CostSubscription interface {
-	CostSubscription()
+type costSubscription interface {
+	CostSubscription(ctx context.Context, filter *model.CostParams) (int64, error)
+}
+
+type helper interface {
+	GetCostParams(r *http.Request) (*model.CostParams, error)
+}
+
+type userResponse struct {
+	ServiceName string     `json:"service_name"`
+	StartDate   time.Time  `json:"start_period"`
+	EndDate     *time.Time `json:"end_period"`
+	TotalCost   int64      `json:"total_cost"`
 }
 
 func Handler(
-	l *slog.Logger, cs CostSubscription,
+	l *slog.Logger, cs costSubscription, h helper,
 	w http.ResponseWriter, r *http.Request,
 ) {
-	// const fn = "handlers.rsub.Handler"
-	// log := l.With(
-	// 	slog.String("fn", fn),
-	// 	slog.String("requestID", middleware.GetReqID(r.Context())),
-	// )
+	const fn = "handlers.costsub.Handler"
+	log := l.With(
+		slog.String("fn", fn),
+		slog.String("requestID", middleware.GetReqID(r.Context())),
+	)
 
-	// startPeriodStr := r.URL.Query().Get("start_period")
-	// endPeriodStr := r.URL.Query().Get("end_period")
-	// userIDStr := r.URL.Query().Get("user_id")
-	// serviceName := r.URL.Query().Get("service_name")
+	filters, err := h.GetCostParams(r)
+	if err != nil {
+		log.Error("invalid params", slog.String("err", err.Error()))
+		http.Error(w, "Invalid params", http.StatusBadRequest)
 
-	// if startPeriodStr == "" || endPeriodStr == "" {
-	// 	log.Error(
-	// 		"wrong period",
-	// 		slog.String("start_date", startPeriodStr),
-	// 		slog.String("end_date", endPeriodStr),
-	// 	)
-	// 	http.Error(w, "Wrong period", http.StatusBadRequest)
+		return
+	}
 
-	// 	return
-	// }
+	total, err := cs.CostSubscription(r.Context(), filters)
+	if err != nil {
+		log.Error("failed to count total cost", slog.String("err", err.Error()))
+		http.Error(w, "Something wrong", http.StatusInternalServerError)
 
-	// startDate, err := time.Parse("01-2006", startPeriodStr)
-	// if err != nil {
-	// 	log.Error(
-	// 		"Bad period format",
-	// 		slog.String("start_date", startPeriodStr),
-	// 	)
-	// 	http.Error(w, "Bad period format", http.StatusBadRequest)
+		return
+	}
 
-	// 	return
-	// }
+	ur := userResponse{
+		ServiceName: filters.ServiceName,
+		StartDate:   filters.StartDate,
+		EndDate:     filters.EndDate,
+		TotalCost:   total,
+	}
 
-	// endDate, err := time.Parse("01-2006", endPeriodStr)
-	// if err != nil {
-	// 	log.Error(
-	// 		"Bad period format",
-	// 		slog.String("end_date", endPeriodStr),
-	// 	)
-	// 	http.Error(w, "Bad period format", http.StatusBadRequest)
+	w.Header().Set("Content-Type", "application/json")
 
-	// 	return
-	// }
+	if err := json.NewEncoder(w).Encode(&ur); err != nil {
+		log.Error("failed to send response", slog.String("err", err.Error()))
+		http.Error(w, "Something wrong", http.StatusInternalServerError)
 
+		return
+	}
+
+	log.Info(
+		"Total cost counted successfully!",
+		slog.String("userID", filters.UserID.String()),
+		slog.String("serviceName", filters.ServiceName),
+	)
 }

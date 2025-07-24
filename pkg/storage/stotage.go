@@ -21,6 +21,7 @@ type Storage interface {
 	UpdateSubscription(ctx context.Context, subID int64, sub *model.Subscription) error
 	DeleteSubscription(ctx context.Context, subID int64) error
 	GetListSubscription(ctx context.Context, userID uuid.UUID, serviceName string) ([]*model.Subscription, error)
+	CostSubscription(ctx context.Context, filter *model.CostParams) (int64, error)
 	CloseConnection()
 	CheckStorage
 }
@@ -78,5 +79,13 @@ const (
 		SELECT service_name, price, user_id, start_date, end_date
 		FROM subscriptions
 		WHERE user_id = $1 AND service_name = $2;
+	`
+	CountSubscriptionsSchema = `
+		SELECT sum(price)
+		FROM subscriptions
+		WHERE user_id = $1 
+			AND service_name = $2
+			AND start_date >= $3
+			AND (end_date <= $4 OR end_date IS NULL);
 	`
 )
