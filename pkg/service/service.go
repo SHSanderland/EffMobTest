@@ -1,3 +1,4 @@
+// Пакет service служит в качестве помощника для хендлеров сервиса.
 package service
 
 import (
@@ -21,6 +22,8 @@ var (
 	ErrInvalidDate        = errors.New("invalid date")
 )
 
+// SubscriptionService Интерефейс со всеми методами, которые используют
+// хендлеры.
 type SubscriptionService interface {
 	CheckBody(sub *model.Subscription) bool
 	CheckSubscription(ctx context.Context, sub *model.Subscription) (bool, error)
@@ -31,30 +34,40 @@ type SubscriptionService interface {
 	GetCostParams(r *http.Request) (*model.CostParams, error)
 }
 
+// Service Структура-помощник хендлеров. В данном сервисе необходима
+// для проверки в базе данных, валидации и парсинга URL-параметров.
 type Service struct {
 	database storage.CheckStorage
 }
 
+// InitService Инициализации структуры Service.
 func InitService(db storage.Storage) *Service {
 	return &Service{database: db}
 }
 
+// CheckBody Проверка модели.
 func (s *Service) CheckBody(sub *model.Subscription) bool {
 	return model.IsValidSubscription(sub)
 }
 
+// CheckSubscription Проверка на существование подписки
+// в базе данных по телу подписки.
 func (s *Service) CheckSubscription(ctx context.Context, sub *model.Subscription) (bool, error) {
 	return s.database.CheckSubscription(ctx, sub)
 }
 
+// CheckSubscriptionID Проверка на существование подписки
+// в базе данных по ID подписки.
 func (s *Service) CheckSubscriptionID(ctx context.Context, subID int64) (bool, error) {
 	return s.database.CheckSubscriptionID(ctx, subID)
 }
 
+// CheckSubscriptionForUpdate Проверка подписки на валидность обнавления.
 func (s *Service) CheckSubscriptionForUpdate(ctx context.Context, subID int64, sub *model.Subscription) (bool, error) {
 	return s.database.CheckSubscriptionForUpdate(ctx, subID, sub)
 }
 
+// GetSubID Получение ID подписки из URL.
 func (s *Service) GetSubID(r *http.Request) (int64, error) {
 	subID := chi.URLParam(r, "id")
 
@@ -66,6 +79,8 @@ func (s *Service) GetSubID(r *http.Request) (int64, error) {
 	return intsubID, nil
 }
 
+// GetUserIDAndServiceName Получение UUID пользователя и
+// название подписки из URL.
 func (s *Service) GetUserIDAndServiceName(r *http.Request) (uuid.UUID, string, error) {
 	userID := r.URL.Query().Get("user_id")
 	if userID == "" {
@@ -85,6 +100,8 @@ func (s *Service) GetUserIDAndServiceName(r *http.Request) (uuid.UUID, string, e
 	return userUUID, serviceName, nil
 }
 
+// GetCostParams Получение параметров из URL для
+// структуры CostParams.
 func (s *Service) GetCostParams(r *http.Request) (*model.CostParams, error) {
 	serviceName := r.URL.Query().Get("service_name")
 	userID := r.URL.Query().Get("user_id")

@@ -1,3 +1,4 @@
+// Пакет logger нужен для работы логгера в проекте.
 package logger
 
 import (

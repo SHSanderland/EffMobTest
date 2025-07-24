@@ -1,3 +1,5 @@
+// Пакет server используется для инициализации сервера
+// и роутера приложения.
 package server
 
 import (
@@ -16,6 +18,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
+// InitServer Инициализация сервера.
 func InitServer(l *slog.Logger, cfg *config.Config, db storage.Storage) {
 	const fn = "server.InitServer"
 	log := l.With(
@@ -33,7 +36,7 @@ func InitServer(l *slog.Logger, cfg *config.Config, db storage.Storage) {
 
 	log.Info("Start server!")
 
-	go gracefulShutdown(log, &srv, db)
+	go gracefulShutdown(log, &srv)
 
 	if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		log.Error("error to start server", slog.String("err", err.Error()))
@@ -46,6 +49,7 @@ func InitServer(l *slog.Logger, cfg *config.Config, db storage.Storage) {
 	db.CloseConnection()
 }
 
+// initMux Инициализация роутера.
 func initMux(log *slog.Logger, db storage.Storage) *chi.Mux {
 	router := chi.NewRouter()
 	h := handlers.InitHandlers(log, db)
@@ -68,7 +72,9 @@ func initMux(log *slog.Logger, db storage.Storage) *chi.Mux {
 	return router
 }
 
-func gracefulShutdown(log *slog.Logger, srv *http.Server, db storage.Storage) {
+// gracefulShutdown Функция для постепенного выключения сервера.
+// Слушает сигналы ОС. Запускать в горутине.
+func gracefulShutdown(log *slog.Logger, srv *http.Server) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 	<-c

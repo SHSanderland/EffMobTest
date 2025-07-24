@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// CheckSubscriptionID Проверка существует ли подписка в базе.
 func (s *Storage) CheckSubscriptionID(ctx context.Context, subID int64) (bool, error) {
 	const fn = "psql.CheckSubscriptionID"
 	log := s.log.With(
@@ -53,6 +54,9 @@ func (s *Storage) CheckSubscriptionID(ctx context.Context, subID int64) (bool, e
 	return hasID, nil
 }
 
+// CheckSubscription Проверка активна ли подписка на текущий момент.
+// Примечание: Проверка учитывает ТОЛЬКО текущий момент. Она не
+// учитывает более сложные моменты с поиском по всей базе наложением дат.
 func (s *Storage) CheckSubscription(ctx context.Context, sub *model.Subscription) (bool, error) {
 	const fn = "psql.CheckSubscription"
 	log := s.log.With(
@@ -99,6 +103,8 @@ func (s *Storage) CheckSubscription(ctx context.Context, sub *model.Subscription
 	return isActive, nil
 }
 
+// CheckSubscriptionForUpdate Проверка валидности обновления подписки.
+// Проверяет обновляемое end_date > start_date.
 func (s *Storage) CheckSubscriptionForUpdate(ctx context.Context, subID int64, sub *model.Subscription) (bool, error) {
 	const fn = "psql.CheckSubscription"
 	log := s.log.With(
@@ -130,6 +136,8 @@ func (s *Storage) CheckSubscriptionForUpdate(ctx context.Context, subID int64, s
 	if !endDateFromSub.After(*startDateFromDB) {
 		return false, nil
 	}
+
+	log.Info("Subscription is checked!")
 
 	return true, nil
 }

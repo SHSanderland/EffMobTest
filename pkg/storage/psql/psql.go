@@ -1,3 +1,5 @@
+// Пакет psql для работы с PostgreSQL. Использует драйвер PGX.
+// В качестве мигратора библиотека migrate.
 package psql
 
 import (
@@ -20,11 +22,13 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// Storage Структура работы с PostgreSQL. Использует pgxpool.
 type Storage struct {
 	db  *pgxpool.Pool
 	log *slog.Logger
 }
 
+// InitDB Инициализации базы данных.
 func InitDB(ctx context.Context, log *slog.Logger, cfg *config.Config) (*Storage, error) {
 	pool, err := pgxpool.New(ctx, cfg.DSN)
 	if err != nil {
@@ -33,6 +37,7 @@ func InitDB(ctx context.Context, log *slog.Logger, cfg *config.Config) (*Storage
 		return nil, fmt.Errorf("failed to add new connection: %w", err)
 	}
 
+	// Если сразу подключиться не получилось, то пробуем еще три раза.
 	err = pool.Ping(ctx)
 	for i := 0; err != nil && i < 3; i++ {
 		log.Error(
@@ -67,6 +72,7 @@ func InitDB(ctx context.Context, log *slog.Logger, cfg *config.Config) (*Storage
 	return &Storage{log: log, db: pool}, nil
 }
 
+// CreateSubscription Создание подписки в базе данных.
 func (s *Storage) CreateSubscription(ctx context.Context, sub *model.Subscription) error {
 	const fn = "psql.CreateSubscription"
 	log := s.log.With(
@@ -127,6 +133,7 @@ func (s *Storage) CreateSubscription(ctx context.Context, sub *model.Subscriptio
 	return nil
 }
 
+// ReadSubscription Чтение подписки в базе данных.
 func (s *Storage) ReadSubscription(ctx context.Context, subID int64) (*model.Subscription, error) {
 	const fn = "psql.ReadSubscription"
 	log := s.log.With(
@@ -183,6 +190,8 @@ func (s *Storage) ReadSubscription(ctx context.Context, subID int64) (*model.Sub
 	return &sub, nil
 }
 
+// UpdateSubscription Обновление подписки в базе данных.
+// Обновляет только название сервиса, цену и дату окончания.
 func (s *Storage) UpdateSubscription(ctx context.Context, subID int64, sub *model.Subscription) error {
 	const fn = "psql.UpdateSubscription"
 	log := s.log.With(
@@ -236,6 +245,7 @@ func (s *Storage) UpdateSubscription(ctx context.Context, subID int64, sub *mode
 	return nil
 }
 
+// DeleteSubscription Удаление подписки в базе данных.
 func (s *Storage) DeleteSubscription(ctx context.Context, subID int64) error {
 	const fn = "psql.DeleteSubscription"
 	log := s.log.With(
@@ -273,6 +283,7 @@ func (s *Storage) DeleteSubscription(ctx context.Context, subID int64) error {
 	return nil
 }
 
+// GetListSubscription Получение списка данных о подписке из базы данных.
 func (s *Storage) GetListSubscription(
 	ctx context.Context, userID uuid.UUID, serviceName string,
 ) ([]*model.Subscription, error) {
@@ -320,6 +331,7 @@ func (s *Storage) GetListSubscription(
 	return subs, nil
 }
 
+// CostSubscription Получение всей суммы, потраченную на подписку пользователем.
 func (s *Storage) CostSubscription(ctx context.Context, filter *model.CostParams) (int64, error) {
 	const fn = "psql.CostSubscription"
 	log := s.log.With(
@@ -366,11 +378,14 @@ func (s *Storage) CostSubscription(ctx context.Context, filter *model.CostParams
 	return total, nil
 }
 
+// CloseConnection Закрытие соединения с базой данных.
 func (s *Storage) CloseConnection() {
 	s.db.Close()
 	s.log.Info("Connection to DB is closed!")
 }
 
+// prepareUpdate Проверка какие параметры нужно обновлять для
+// UpdateSubscription, а также преобразование дат к нужному типу.
 func prepareUpdate(sub *model.Subscription) ([]string, []any) {
 	var (
 		updates []string
@@ -395,6 +410,7 @@ func prepareUpdate(sub *model.Subscription) ([]string, []any) {
 	return updates, args
 }
 
+// getSubscriptionStartDate Получение start_date из базы данных.
 func (s *Storage) getSubscriptionStartDate(ctx context.Context, subID int64) *time.Time {
 	const fn = "psql.UpdateSubscription"
 	log := s.log.With(
@@ -436,6 +452,7 @@ func (s *Storage) getSubscriptionStartDate(ctx context.Context, subID int64) *ti
 	return startDateFromDB
 }
 
+// getSubList Сканирование ответа для формирования списка подписок.
 func (s *Storage) getSubList(rows pgx.Rows) ([]*model.Subscription, error) {
 	var subs []*model.Subscription
 

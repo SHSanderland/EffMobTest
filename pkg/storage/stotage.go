@@ -1,3 +1,5 @@
+// Пакет storage нужен для хранения общих ошибок, интерфейсов
+// и SQL-запросов.
 package storage
 
 import (
@@ -15,6 +17,8 @@ var (
 	ErrEmptySub    = errors.New("nothing to update")
 )
 
+// Storage Интерефейс со всеми методами, которые используют хендлеры,
+// для обращения в базу данных.
 type Storage interface {
 	CreateSubscription(ctx context.Context, sub *model.Subscription) error
 	ReadSubscription(ctx context.Context, subID int64) (*model.Subscription, error)
@@ -26,6 +30,8 @@ type Storage interface {
 	CheckStorage
 }
 
+// CheckStorage Интерефейс со всеми методами, которые использует Service,
+// для проверок в базе данных.
 type CheckStorage interface {
 	CheckSubscription(ctx context.Context, sub *model.Subscription) (bool, error)
 	CheckSubscriptionID(ctx context.Context, subID int64) (bool, error)
